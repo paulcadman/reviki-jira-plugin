@@ -26,15 +26,6 @@ import net.hillsdon.reviki.wiki.renderer.creole.LinkResolutionContext;
  * @author msw
  */
 public final class JiraRevikiRenderer {
-  /** Match Confluence-style links in single square brackets.*/
-  private static final Pattern confluenceLinks = Pattern.compile("(?<!\\[)\\[([^\\\\,\\[\\]<>|]+)(?:(\\|)([^\\\\,\\[\\]<>]+))?\\](?!\\])");
-
-  /** Replacement text to turn Confluence-style links into Reviki-style links. */
-  private static final String revikiReplacement = "[[$3$2$1]]";
-
-  /** Match issue IDs not in any form of brackets.  JIRA actually works with 99ISSUE-1234AA. */
-  private static final Pattern issueLinks = Pattern.compile("(?<![A-Za-z\\[])([A-Z]+-[0-9]+)(?![0-9])");
-
   /** Render Reviki markup to HTML, complete with link handling. */
   private static final String JIRA_PATH = ComponentAccessor.getApplicationProperties().getString("jira.baseurl");
 
@@ -57,11 +48,6 @@ public final class JiraRevikiRenderer {
 
     String contents = text;
 
-    // First fix any Confluence-style links for backwards-compatibility.
-    if (_pluginSettings.convertConfluenceLinks()) {
-      contents = confluenceToReviki(text);
-    }
-
     // Try rendering it, and return the original markup if we fail.
     String out = text;
     Optional<String> rendered = renderer.render(contents);
@@ -80,31 +66,6 @@ public final class JiraRevikiRenderer {
     }
 
     return out;
-  }
-
-  /**
-   * Convert Confluence-style links ("[FOO-1]") to Reviki-style links
-   * ("[[FOO-1]]"), this allows backwards compatibility in linking to issues.
-   */
-  private static String confluenceToReviki(final String text) {
-    String newText = confluenceLinks.matcher(text).replaceAll(revikiReplacement);
-
-    IssueService issueService = ComponentAccessor.getIssueService();
-    // We could get an IssueManager from the ComponentAccessor, then we can simply call isExistingIssueKey but that is fairly new and marked experimental
-
-    StringBuffer sb = new StringBuffer();
-    Matcher issueMatch = issueLinks.matcher(newText);
-    while (issueMatch.find()) {
-      String issueKey = issueMatch.group(1);
-      if (issueService.getIssue(ComponentAccessor.getJiraAuthenticationContext().getLoggedInUser(), issueKey).isValid()) {
-        issueMatch.appendReplacement(sb, "[[$1]]");
-      }
-      else {
-        issueMatch.appendReplacement(sb, "$1");
-      }
-    }
-    issueMatch.appendTail(sb);
-    return sb.toString();
   }
 
   /**
