@@ -20,6 +20,6 @@ public class JiraLinkHandler extends SimpleLinkHandler implements LinkPartsHandl
     IssueService issueService = ComponentAccessor.getIssueService();
     // We could get an IssueManager from the ComponentAccessor, then we can simply
     //call isExistingIssueKey but that is fairly new and marked experimental
-    return !issueService.getIssue(ComponentAccessor.getJiraAuthenticationContext().getLoggedInUser(), parts.getText()).isValid();
+    return super.isAcronymNotLink(page, parts) && !issueService.getIssue(ComponentAccessor.getJiraAuthenticationContext().getLoggedInUser(), parts.getText()).isValid();
   }
 }
