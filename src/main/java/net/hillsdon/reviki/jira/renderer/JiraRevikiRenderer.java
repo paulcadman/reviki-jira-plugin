@@ -2,13 +2,12 @@ package net.hillsdon.reviki.jira.renderer;
 
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
-import java.util.regex.Pattern;
-import java.util.regex.Matcher;
-
-import com.atlassian.jira.bc.issue.IssueService;
 import com.atlassian.jira.component.ComponentAccessor;
 import com.google.common.base.Optional;
+import com.google.common.base.Suppliers;
 
 import net.hillsdon.reviki.web.urls.Configuration;
 import net.hillsdon.reviki.vc.SimplePageStore;
@@ -18,7 +17,11 @@ import net.hillsdon.reviki.web.urls.InternalLinker;
 import net.hillsdon.reviki.web.urls.SimpleWikiUrls;
 import net.hillsdon.reviki.web.urls.UnknownWikiException;
 import net.hillsdon.reviki.wiki.renderer.HtmlRenderer;
+import net.hillsdon.reviki.wiki.renderer.creole.LinkPartsHandler;
 import net.hillsdon.reviki.wiki.renderer.creole.LinkResolutionContext;
+import net.hillsdon.reviki.wiki.renderer.creole.SimpleAnchors;
+import net.hillsdon.reviki.wiki.renderer.creole.SimpleImages;
+import net.hillsdon.reviki.wiki.renderer.macro.Macro;
 
 /**
  * A simple interface to Reviki's HTML rendering capabilities.
@@ -125,7 +128,11 @@ public final class JiraRevikiRenderer {
 
     // We don't know of any other pages.
     SimplePageStore pageStore = new DummyPageStore();
+    
+    LinkResolutionContext lrc = new LinkResolutionContext(linker, wikilinker, new JiraWikiConfiguration(wikilinker), pageStore);
+    final LinkPartsHandler internalLinks = new JiraLinkHandler(SimpleAnchors.ANCHOR, lrc);
+    final LinkPartsHandler imageLinks = new SimpleImages(lrc);
 
-    return new HtmlRenderer(new LinkResolutionContext(linker, wikilinker, new JiraWikiConfiguration(wikilinker), pageStore));
+    return new HtmlRenderer(pageStore, internalLinks, imageLinks, Suppliers.ofInstance((List<Macro>) new ArrayList<Macro>()));
   }
 }
